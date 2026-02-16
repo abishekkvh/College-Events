@@ -1,21 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Wifi, Battery, ChevronLeft, Search, Grid, RefreshCw, Monitor, Terminal, Settings } from 'lucide-react';
+import { Wifi, Battery, ChevronLeft, Grid, RefreshCw, Settings } from 'lucide-react';
 import { fileSystem, type FileNode } from './data';
 
-// 👇 Your local assets 👇
+// --- Local Assets ---
 import wallpaper from './assets/wallpaper.png';
 import iconNotes from './assets/notes.png';
 import iconZip from './assets/zip.png';
 
-// --- Icon Mapping ---
 const ICONS = {
   folder: "https://img.icons8.com/fluent/96/folder-invoices.png", 
   text: iconNotes,
   lock: iconZip,
 };
 
-// --- Types ---
 type WindowData = {
   id: string;
   title: string;
@@ -25,16 +23,11 @@ type WindowData = {
   minimized: boolean;
 };
 
-// --- Main App Component ---
 export default function App() {
   const [windows, setWindows] = useState<WindowData[]>([]);
   const [activeZ, setActiveZ] = useState(10);
   const [time, setTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  
-  // Persisted state for Notes App
   const [noteAnswers, setNoteAnswers] = useState<string[]>(Array(15).fill(""));
-
-  // Context Menu State
   const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0 });
 
   useEffect(() => {
@@ -42,7 +35,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // --- Handlers ---
   const handleNoteUpdate = (index: number, value: string) => {
     const newAnswers = [...noteAnswers];
     newAnswers[index] = value;
@@ -62,59 +54,44 @@ export default function App() {
   };
 
   const closeWindow = (id: string) => setWindows(windows.filter(w => w.id !== id));
-  
   const focusWindow = (id: string) => {
     const newZ = activeZ + 1;
     setActiveZ(newZ);
     setWindows(windows.map(w => w.id === id ? { ...w, zIndex: newZ } : w));
   };
-
   const toggleMinimize = (id: string) => {
     setWindows(windows.map(w => w.id === id ? { ...w, minimized: !w.minimized } : w));
   };
 
-  // --- Context Menu Handlers ---
   const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent browser's default menu
-    
-    // Keep menu inside viewport bounds
-    const menuWidth = 220;
-    const menuHeight = 180;
-    const x = e.pageX + menuWidth > window.innerWidth ? window.innerWidth - menuWidth - 10 : e.pageX;
-    const y = e.pageY + menuHeight > window.innerHeight ? window.innerHeight - menuHeight - 10 : e.pageY;
-    
+    e.preventDefault();
+    const x = e.pageX + 220 > window.innerWidth ? window.innerWidth - 230 : e.pageX;
+    const y = e.pageY + 180 > window.innerHeight ? window.innerHeight - 190 : e.pageY;
     setContextMenu({ show: true, x, y });
-  };
-
-  const handleDesktopClick = () => {
-    if (contextMenu.show) setContextMenu({ ...contextMenu, show: false });
   };
 
   return (
     <div 
-      className="h-screen w-screen overflow-hidden text-slate-800 font-sans relative selection:bg-winBlue selection:text-white bg-cover bg-center bg-no-repeat"
+      className="h-screen w-screen overflow-hidden text-slate-800 font-sans relative select-none bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${wallpaper})` }}
       onContextMenu={handleContextMenu}
-      onClick={handleDesktopClick}
+      onClick={() => contextMenu.show && setContextMenu({ ...contextMenu, show: false })}
     >
-      {/* Desktop Icons */}
       <div className="absolute top-4 left-4 flex flex-col gap-4 z-0">
         <DesktopIcon iconSrc={ICONS.lock} label="FinalTreasure.zip" onClick={() => openWindow('final', 'Password Required', 'password')} />
         <DesktopIcon iconSrc={ICONS.text} label="My Notes" onClick={() => openWindow('notes', 'My Notes', 'notes')} />
       </div>
 
-      {/* The Hidden Folder */}
       <div 
-        className="absolute top-10 right-20 flex flex-col items-center gap-1 w-24 opacity-[0.02] hover:opacity-20 cursor-pointer transition-opacity duration-500 group z-0"
+        className="absolute top-10 right-20 flex flex-col items-center gap-1 w-24 opacity-[0.01] hover:opacity-10 transition-opacity duration-700 group z-0"
         onDoubleClick={() => openWindow('explorer', 'File Explorer', 'explorer', fileSystem)}
       >
-        <div className="p-3 rounded-xl border border-transparent group-hover:border-white/10 group-hover:bg-white/10 transition-all duration-200">
-          <img src={ICONS.folder} alt="Secret Folder" className="w-12 h-12 pointer-events-none select-none" draggable={false} />
+        <div className="p-3 rounded-xl border border-transparent group-hover:border-white/5 transition-all duration-200">
+          <img src={ICONS.folder} alt="Secret" className="w-12 h-12 pointer-events-none select-none" draggable={false} />
         </div>
-        <span className="text-xs text-center font-medium text-white shadow-sm select-none">???</span>
+        <span className="text-[10px] text-center font-medium text-white/20">???</span>
       </div>
 
-      {/* Render Windows */}
       {windows.map(win => !win.minimized && (
         <Window 
           key={win.id} 
@@ -128,79 +105,50 @@ export default function App() {
         />
       ))}
 
-      {/* Custom Right-Click Context Menu */}
       {contextMenu.show && (
         <div 
-          className="absolute z-[99999] w-52 bg-white/60 backdrop-blur-3xl border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.2)] rounded-xl p-1.5 flex flex-col text-sm font-medium text-slate-800 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute z-[99999] w-52 bg-white/60 backdrop-blur-3xl border border-white/40 shadow-xl rounded-xl p-1.5 flex flex-col text-sm font-medium animate-in fade-in zoom-in-95 duration-100"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
-          <button className="flex items-center gap-3 px-3 py-2 hover:bg-white/50 rounded-lg transition-colors text-left" onClick={() => window.location.reload()}>
+          <button className="flex items-center gap-3 px-3 py-2 hover:bg-white/50 rounded-lg text-left" onClick={() => window.location.reload()}>
             <RefreshCw className="w-4 h-4 text-blue-500" /> Refresh
           </button>
-          <div className="w-full h-px bg-white/40 my-1"></div>
-          <button className="flex items-center gap-3 px-3 py-2 hover:bg-white/50 rounded-lg transition-colors text-left">
-            <Monitor className="w-4 h-4 text-slate-500" /> Display settings
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2 hover:bg-white/50 rounded-lg transition-colors text-left" onClick={() => openWindow('terminal', 'Windows Terminal', 'notepad', 'C:\\Users\\Guest> _')}>
-            <Terminal className="w-4 h-4 text-slate-700" /> Open in Terminal
-          </button>
-          <div className="w-full h-px bg-white/40 my-1"></div>
-          <button className="flex items-center gap-3 px-3 py-2 hover:bg-white/50 rounded-lg transition-colors text-left" onClick={() => confetti({ particleCount: 100, spread: 70 })}>
+          <div className="w-full h-px bg-white/40 my-1" />
+          <button className="flex items-center gap-3 px-3 py-2 hover:bg-white/50 rounded-lg text-left" onClick={() => confetti({ particleCount: 100, spread: 70 })}>
             <Settings className="w-4 h-4 text-purple-500" /> Personalize
           </button>
         </div>
       )}
 
-      {/* Windows 12 Floating Taskbar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-2xl px-2 py-2 backdrop-blur-3xl bg-white/10 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] flex items-center gap-2 z-[9999]">
-        
-        {/* Start Button */}
-        <button className="p-2 hover:bg-white/20 rounded-xl transition-all duration-200 group mx-1">
-          <Grid className="w-6 h-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-2xl px-2 py-2 backdrop-blur-3xl bg-white/10 border border-white/20 shadow-2xl flex items-center gap-2 z-[9999]">
+        <button className="p-2 hover:bg-white/20 rounded-xl transition-all group mx-1">
+          <Grid className="w-6 h-6 text-blue-400 group-hover:text-blue-300" />
         </button>
-        
-        {/* Search */}
-        <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 px-4 py-1.5 rounded-full transition-all duration-200 mx-1">
-          <Search className="w-4 h-4 text-slate-200" />
-          <span className="text-sm text-slate-200 pr-8">Search...</span>
-        </button>
-
-        <div className="w-px h-8 bg-white/20 mx-1 rounded-full"></div>
-        
-        {/* Open App Icons */}
+        <div className="w-px h-8 bg-white/20 mx-1 rounded-full" />
         <div className="flex items-center gap-1">
           {windows.map(win => {
             const isActive = win.zIndex === activeZ && !win.minimized;
             return (
               <button 
                 key={`tb-${win.id}`} 
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent closing context menu if open
+                onClick={(e) => { 
+                  e.stopPropagation(); 
                   if (win.minimized) {
                     toggleMinimize(win.id);
                   } else {
                     focusWindow(win.id);
                   }
                 }}
-                className={`relative p-2.5 rounded-xl transition-all duration-200 ${isActive ? 'bg-white/20 shadow-inner' : 'hover:bg-white/10'}`}
+                className={`relative p-2.5 rounded-xl transition-all ${isActive ? 'bg-white/20 shadow-inner' : 'hover:bg-white/10'}`}
               >
-                <img 
-                  src={win.type === 'explorer' ? ICONS.folder : win.type === 'password' ? ICONS.lock : ICONS.text} 
-                  alt="App Icon" 
-                  className="w-6 h-6 pointer-events-none drop-shadow-sm" 
-                  draggable={false}
-                />
-                {isActive && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-1 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]"></div>}
-                {!isActive && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1 bg-white/50 rounded-full"></div>}
+                <img src={win.type === 'explorer' ? ICONS.folder : win.type === 'password' ? ICONS.lock : ICONS.text} alt="icon" className="w-6 h-6" />
+                {isActive && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-1 bg-blue-400 rounded-full shadow-lg" />}
               </button>
             )
           })}
         </div>
-        
-        <div className="w-px h-8 bg-white/20 mx-1 rounded-full"></div>
-        
-        {/* System Tray */}
-        <div className="flex items-center gap-3 px-3 py-1.5 hover:bg-white/10 rounded-xl transition-colors text-sm font-medium text-white cursor-default">
+        <div className="w-px h-8 bg-white/20 mx-1 rounded-full" />
+        <div className="flex items-center gap-3 px-3 py-1.5 text-sm font-medium text-white">
           <Wifi className="w-4 h-4" />
           <Battery className="w-4 h-4" />
           <span>{time}</span>
@@ -210,30 +158,18 @@ export default function App() {
   );
 }
 
-// --- Desktop Icon Component ---
 function DesktopIcon({ iconSrc, label, onClick }: { iconSrc: string, label: string, onClick: () => void }) {
   return (
-    <div onDoubleClick={onClick} className="flex flex-col items-center gap-1.5 w-24 cursor-pointer group">
+    <div onDoubleClick={onClick} className="flex flex-col items-center gap-1.5 w-24 group cursor-default">
       <div className="p-3 rounded-xl border border-transparent group-hover:border-white/10 group-hover:bg-white/10 group-hover:backdrop-blur-sm transition-all duration-200">
-        <img src={iconSrc} alt={label} className="w-12 h-12 drop-shadow-md pointer-events-none select-none" draggable={false} />
+        <img src={iconSrc} alt={label} className="w-12 h-12 drop-shadow-md pointer-events-none" draggable={false} />
       </div>
-      <span className="text-xs text-center text-white font-semibold drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] px-1 leading-tight select-none">
-        {label}
-      </span>
+      <span className="text-xs text-center text-white font-semibold drop-shadow-md px-1 select-none">{label}</span>
     </div>
   );
 }
 
-// --- Draggable Window Wrapper ---
-function Window({ 
-  data, 
-  onClose, 
-  onFocus, 
-  onMinimize,
-  openWindow,
-  isActive,
-  noteProps
-}: { 
+function Window({ data, onClose, onFocus, onMinimize, openWindow, isActive, noteProps }: { 
   data: WindowData, 
   onClose: () => void, 
   onFocus: () => void, 
@@ -242,66 +178,53 @@ function Window({
   isActive: boolean,
   noteProps: { answers: string[], onUpdate: (i: number, v: string) => void }
 }) {
-  const [pos, setPos] = useState(() => ({ x: window.innerWidth / 2 - 300 + Math.random() * 40, y: window.innerHeight / 2 - 200 + Math.random() * 40 }));
+  const [pos, setPos] = useState(() => {
+    if (data.type === 'notes') return { x: window.innerWidth - 320, y: 20 };
+    return { x: window.innerWidth / 2 - 300 + Math.random() * 20, y: window.innerHeight / 2 - 200 + Math.random() * 20 };
+  });
+
   const dragRef = useRef<{ startX: number, startY: number, initialX: number, initialY: number } | null>(null);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     onFocus();
     if ((e.target as HTMLElement).closest('.window-controls')) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragRef.current = { startX: e.clientX, startY: e.clientY, initialX: pos.x, initialY: pos.y };
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    setPos({ x: dragRef.current.initialX + dx, y: dragRef.current.initialY + dy });
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    dragRef.current = null;
+    setPos({ 
+      x: dragRef.current.initialX + (e.clientX - dragRef.current.startX), 
+      y: dragRef.current.initialY + (e.clientY - dragRef.current.startY) 
+    });
   };
 
   return (
     <div 
-      className={`absolute flex flex-col rounded-xl overflow-hidden backdrop-blur-3xl transition-all duration-200 
-        ${isActive ? 'bg-slate-50/80 shadow-[0_12px_48px_rgba(0,0,0,0.4)] border border-white/60' : 'bg-slate-50/60 shadow-2xl border border-white/30'}
-      `}
-      style={{ left: pos.x, top: pos.y, width: 600, height: 400, zIndex: data.zIndex }}
+      className={`absolute flex flex-col rounded-xl overflow-hidden backdrop-blur-3xl transition-shadow duration-200 ${isActive ? 'bg-slate-50/80 shadow-2xl border border-white/60' : 'bg-slate-50/60 shadow-lg border border-white/30'}`}
+      style={{ left: pos.x, top: pos.y, width: data.type === 'notes' ? 300 : 600, height: 400, zIndex: data.zIndex }}
       onPointerDown={onFocus}
-      onClick={(e) => e.stopPropagation()} // Prevent desktop clicks from triggering when clicking window
     >
-      {/* Title Bar */}
       <div 
-        className="flex justify-between items-center pl-4 pr-3 py-2 bg-white/40 border-b border-white/20 select-none cursor-default"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
+        className="flex justify-between items-center pl-4 pr-3 py-2 bg-white/40 border-b border-white/20 cursor-default" 
+        onPointerDown={handlePointerDown} 
+        onPointerMove={handlePointerMove} 
+        onPointerUp={() => dragRef.current = null}
       >
         <div className="flex items-center gap-2">
-          <img 
-            src={data.type === 'explorer' ? ICONS.folder : data.type === 'password' ? ICONS.lock : ICONS.text} 
-            className="w-4 h-4 pointer-events-none select-none" 
-            alt="icon" 
-            draggable={false}
-          />
+          <img src={data.type === 'explorer' ? ICONS.folder : data.type === 'password' ? ICONS.lock : ICONS.text} className="w-4 h-4" alt="icon" />
           <span className="text-xs font-semibold text-slate-700">{data.title}</span>
         </div>
-        
-        {/* Rounded Color Controls (macOS style) */}
         <div className="flex items-center gap-2 window-controls">
-          <button onClick={(e) => { e.stopPropagation(); onMinimize(); }} className="w-3.5 h-3.5 rounded-full bg-yellow-400 hover:bg-yellow-500 shadow-sm transition-colors" />
-          <button className="w-3.5 h-3.5 rounded-full bg-green-400 hover:bg-green-500 shadow-sm transition-colors" />
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="w-3.5 h-3.5 rounded-full bg-red-400 hover:bg-red-500 shadow-sm transition-colors" />
+          <button onClick={onMinimize} className="w-3 h-3 rounded-full bg-yellow-400 hover:bg-yellow-500 shadow-sm" />
+          <button className="w-3 h-3 rounded-full bg-green-400 shadow-sm opacity-50 cursor-not-allowed" />
+          <button onClick={onClose} className="w-3 h-3 rounded-full bg-red-400 hover:bg-red-500 shadow-sm" />
         </div>
       </div>
-      
-      {/* Window Content */}
-      <div className="flex-1 overflow-auto p-4 bg-white/30 cursor-default">
+      <div className="flex-1 overflow-auto p-4 bg-white/30">
         {data.type === 'explorer' && <FileExplorer node={data.content as FileNode} openWindow={openWindow} />}
-        {data.type === 'notepad' && <div className="font-mono text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{data.content as string}</div>}
+        {data.type === 'notepad' && <div className="font-mono text-sm whitespace-pre-wrap leading-relaxed">{data.content as string}</div>}
         {data.type === 'notes' && <NotesApp answers={noteProps.answers} onUpdate={noteProps.onUpdate} />}
         {data.type === 'password' && <PasswordApp />}
       </div>
@@ -309,24 +232,17 @@ function Window({
   );
 }
 
-// --- File Explorer Component ---
-function FileExplorer({ 
-  node, 
-  openWindow 
-}: { 
+// (Remaining Components: FileExplorer, NotesApp, PasswordApp)
+function FileExplorer({ node, openWindow }: { 
   node: FileNode, 
   openWindow: (id: string, title: string, type: WindowData['type'], content?: FileNode | string) => void 
 }) {
   const [history, setHistory] = useState<FileNode[]>([node]);
   const currentFolder = history[history.length - 1];
-
-  const navigateIn = (folder: FileNode) => setHistory([...history, folder]);
-  const navigateOut = () => { if (history.length > 1) setHistory(history.slice(0, -1)); };
-
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2 mb-4 bg-white/50 backdrop-blur-md border border-white/30 p-2 rounded-lg shadow-sm">
-        <button onClick={navigateOut} disabled={history.length === 1} className="p-1.5 disabled:opacity-30 hover:bg-white/60 rounded-md transition-colors">
+        <button onClick={() => history.length > 1 && setHistory(history.slice(0, -1))} disabled={history.length === 1} className="p-1.5 disabled:opacity-30 hover:bg-white/60 rounded-md transition-colors">
           <ChevronLeft className="w-4 h-4 text-slate-700" />
         </button>
         <div className="text-sm font-medium text-slate-700 flex-1 truncate px-2 border-l border-slate-300">
@@ -337,16 +253,11 @@ function FileExplorer({
         {currentFolder.children?.map((child, idx) => (
           <div 
             key={idx} 
-            onDoubleClick={() => child.isFolder ? navigateIn(child) : openWindow(`file-${child.name}`, child.name, 'notepad', child.content)}
-            className="flex flex-col items-center gap-2 p-3 hover:bg-white/40 border border-transparent hover:border-white/40 rounded-xl cursor-pointer transition-all"
+            onDoubleClick={() => child.isFolder ? setHistory([...history, child]) : openWindow(`file-${child.name}`, child.name, 'notepad', child.content)}
+            className="flex flex-col items-center gap-2 p-3 hover:bg-white/40 border border-transparent hover:border-white/40 rounded-xl cursor-default transition-all"
           >
-            <img 
-              src={child.isFolder ? ICONS.folder : ICONS.text} 
-              alt={child.name} 
-              className="w-12 h-12 pointer-events-none select-none drop-shadow-sm" 
-              draggable={false}
-            />
-            <span className="text-xs text-center font-medium text-slate-800 truncate w-full px-1">{child.name}</span>
+            <img src={child.isFolder ? ICONS.folder : ICONS.text} alt={child.name} className="w-12 h-12 drop-shadow-sm" />
+            <span className="text-xs text-center font-medium truncate w-full">{child.name}</span>
           </div>
         ))}
       </div>
@@ -354,27 +265,15 @@ function FileExplorer({
   );
 }
 
-// --- Notes App Component ---
 function NotesApp({ answers, onUpdate }: { answers: string[], onUpdate: (index: number, value: string) => void }) {
   return (
-    <div className="h-full flex flex-col bg-yellow-100/80 backdrop-blur-md rounded-xl shadow-inner border border-yellow-200/60 overflow-hidden">
-      <div className="bg-yellow-200/50 p-3 border-b border-yellow-300/50 flex justify-between items-center">
-        <span className="font-bold text-yellow-800/80 text-sm tracking-wide uppercase">Clue Tracker</span>
-        <span className="text-xs text-yellow-800/50">{answers.filter(a => a.length > 0).length} / 15 found</span>
-      </div>
-      <div className="flex-1 overflow-auto p-4 space-y-1">
-        {answers.map((answer, index) => (
-          <div key={index} className="flex items-center group">
-            <span className="w-8 text-right pr-2 font-mono text-sm font-bold text-yellow-700/60 select-none group-hover:text-yellow-800 transition-colors">
-              {index + 1}.
-            </span>
-            <input 
-              type="text" 
-              value={answer}
-              onChange={(e) => onUpdate(index, e.target.value)}
-              placeholder="Type answer here..."
-              className="flex-1 bg-transparent border-b border-yellow-600/10 focus:border-yellow-600/50 px-2 py-1 text-sm font-medium text-slate-800 placeholder-yellow-800/30 focus:outline-none transition-colors"
-            />
+    <div className="h-full flex flex-col bg-yellow-100/80 rounded-xl border border-yellow-200/60 overflow-hidden">
+      <div className="bg-yellow-200/50 p-2 border-b border-yellow-300/50 text-center"><span className="text-xs font-bold text-yellow-800 uppercase italic tracking-tighter">Clue Tracker</span></div>
+      <div className="flex-1 overflow-auto p-3 space-y-1">
+        {answers.map((ans, i) => (
+          <div key={i} className="flex items-center group">
+            <span className="w-6 text-right pr-2 font-mono text-[10px] font-bold text-yellow-700/60">{i + 1}.</span>
+            <input type="text" value={ans} onChange={(e) => onUpdate(i, e.target.value)} placeholder="..." className="flex-1 bg-transparent border-b border-yellow-600/10 focus:border-yellow-600/50 px-2 py-0.5 text-xs focus:outline-none" />
           </div>
         ))}
       </div>
@@ -382,59 +281,27 @@ function NotesApp({ answers, onUpdate }: { answers: string[], onUpdate: (index: 
   );
 }
 
-// --- Final Treasure Password App ---
 function PasswordApp() {
   const [input, setInput] = useState('');
-  const [status, setStatus] = useState<'idle' | 'error' | 'success'>('idle');
-
-  const checkPassword = (e: React.FormEvent) => {
+  const [status, setStatus] = useState('idle');
+  const check = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.toUpperCase() === 'YEN') {
       setStatus('success');
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0078D4', '#FFF', '#FFD700'] });
+      confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 } });
     } else {
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 500);
+      setTimeout(() => setStatus('idle'), 600);
     }
   };
-
-  if (status === 'success') {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4 animate-in fade-in zoom-in duration-500">
-        <span className="text-7xl drop-shadow-lg">🏆</span>
-        <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">System Unlocked!</h2>
-        <p className="font-medium text-slate-700">Congratulations! You successfully parsed the file system and solved the digital treasure hunt.</p>
-      </div>
-    );
-  }
-
+  if (status === 'success') return <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-2 animate-in fade-in zoom-in"><span className="text-6xl">💎</span><h2 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent italic">SUCCESS!</h2><p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Gyan Mitra '26 Champion</p></div>;
   return (
-    <div className="flex flex-col items-center justify-center h-full max-w-sm mx-auto text-center space-y-6">
-      <div className="bg-yellow-50/80 backdrop-blur-sm p-5 rounded-xl text-sm font-medium text-yellow-900 border border-yellow-200 shadow-sm">
-        This archive is encrypted. Take the FIRST LETTER of each answer (clues 1-15) in order. They spell a SECRET QUESTION. Type the ANSWER to that question below.
-      </div>
-      <form onSubmit={checkPassword} className="w-full space-y-4">
-        <input 
-          type="text" 
-          placeholder="Enter decryption key..." 
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/70 backdrop-blur-md font-mono text-center shadow-inner transition-transform ${status === 'error' ? 'animate-[shake_0.2s_ease-in-out_0s_2] border-red-400 ring-2 ring-red-400' : 'border-slate-300'}`}
-        />
-        {status === 'error' && <p className="text-red-500 text-sm font-bold">Access Denied. Invalid Key.</p>}
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-md transition-colors">
-          Decrypt
-        </button>
+    <div className="flex flex-col items-center justify-center h-full max-w-sm mx-auto space-y-4">
+      <div className="bg-blue-50/80 p-4 rounded-xl text-[10px] font-bold text-blue-900 border border-blue-100 leading-relaxed shadow-sm uppercase italic">Decryption Protocol: Combine the first letter of Clues 1-15 to form a question. Type the answer to that question below.</div>
+      <form onSubmit={check} className="w-full space-y-3">
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="KEY_PHRASE" className={`w-full px-4 py-3 border rounded-xl bg-white/60 font-mono text-center shadow-inner transition-all ${status === 'error' ? 'animate-shake border-red-400 ring-2 ring-red-100' : 'border-slate-200'}`} />
+        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black text-xs py-3 rounded-xl shadow-lg uppercase tracking-tighter">Decrypt Archive</button>
       </form>
-      <style>{`
-        @keyframes shake {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-6px); }
-          50% { transform: translateX(6px); }
-          75% { transform: translateX(-6px); }
-          100% { transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
 }
