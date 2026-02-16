@@ -111,31 +111,27 @@ It was production-used for an academic technical event.
 
 ### 🖥️ Desktop Interface
 
-![Desktop Screenshot](./screenshots/desktop.png)
+![Desktop Screenshot](./Screenshots/desktop.png)
 
 ---
 
 ### 📂 File Explorer & Hidden Directory
 
-![Explorer Screenshot](./screenshots/explorer.png)
+![Explorer Screenshot](./Screenshots/explorer.png)
 
 ---
 
 ### 📝 My Notes Application
 
-![Notes Screenshot](./screenshots/notes.png)
+![Notes Screenshot](./Screenshots/notes.png)
 
 ---
 
 ### 🔐 Final Treasure Unlock
 
-![Final Treasure Screenshot](./screenshots/final.png)
+![Final Treasure Screenshot](./Screenshots/final.png)
 
----
 
-> 💡 Place your screenshots inside a folder named `screenshots` in the project root for proper rendering.
-
----
 
 ## 🛠️ Installation & Local Setup
 
